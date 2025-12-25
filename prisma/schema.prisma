@@ -7,14 +7,65 @@ generator client {
 
 datasource db {
   provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
 model User {
+  id            Int             @id @default(autoincrement())
+  email         String          @unique
+  password      String
+  name          String?
+  role          String          @default("USER") // "ADMIN" or "USER"
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  participations Participation[]
+  submissions   Submission[]
+  totalPoints   Int             @default(0)
+}
+
+model Tournament {
+  id             Int             @id @default(autoincrement())
+  title          String
+  description    String
+  status         String          @default("UPCOMING") // UPCOMING, ACTIVE, COMPLETED
+  startDate      DateTime
+  endDate        DateTime
+  prizePool      String?
+  tasks          Task[]
+  participations Participation[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model Task {
+  id           Int          @id @default(autoincrement())
+  title        String
+  description  String
+  points       Int
+  tournamentId Int
+  tournament   Tournament   @relation(fields: [tournamentId], references: [id])
+  submissions  Submission[]
+}
+
+model Participation {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  user         User       @relation(fields: [userId], references: [id])
+  tournamentId Int
+  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+  joinedAt     DateTime   @default(now())
+  score        Int        @default(0)
+
+  @@unique([userId, tournamentId])
+}
+
+model Submission {
   id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  name      String?
-  role      String   @default("USER") // "ADMIN" or "USER"
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  taskId    Int
+  task      Task     @relation(fields: [taskId], references: [id])
+  status    String // PENDING, ACCEPTED, REJECTED
+  score     Int?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
