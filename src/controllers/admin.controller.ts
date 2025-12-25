@@ -38,6 +38,35 @@ export const createTournament = async (req: AuthRequest, res: Response): Promise
   }
 };
 
+const updateUserSchema = z.object({
+  role: z.enum(['USER', 'ADMIN']).optional(),
+  totalPoints: z.number().int().optional(),
+});
+
+export const updateUser = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = parseInt(req.params.id);
+    const data = updateUserSchema.parse(req.body);
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(data.role && { role: data.role }),
+        ...(data.totalPoints !== undefined && { totalPoints: data.totalPoints }),
+      },
+    });
+
+    res.json({ message: 'User updated successfully', user });
+  } catch (error) {
+     if (error instanceof z.ZodError) {
+       res.status(400).json({ message: error.issues });
+       return;
+    }
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 export const getUsers = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const users = await prisma.user.findMany({

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createTournament, getUsers } from '../controllers/admin.controller';
+import { createTournament, getUsers, updateUser } from '../controllers/admin.controller';
 import { authenticateToken } from '../middleware/auth.middleware';
 import { isAdmin } from '../middleware/admin.middleware';
 
@@ -10,5 +10,6 @@ router.use(isAdmin);
 
 router.post('/tournaments', createTournament);
 router.get('/users', getUsers);
+router.put('/users/:id', updateUser);
 
 export default router;
