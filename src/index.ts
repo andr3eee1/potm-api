@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import authRoutes from './routes/auth.routes';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -10,6 +11,8 @@ app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
+
+app.use('/auth', authRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.json({ message: 'Welcome to the POTM API' });
