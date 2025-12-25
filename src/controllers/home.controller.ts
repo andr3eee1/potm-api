@@ -64,3 +64,30 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
+export const getLeaderboard = async (req: Request, res: Response) => {
+  try {
+    const leaderboard = await prisma.user.findMany({
+      orderBy: { totalPoints: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        totalPoints: true,
+        role: true,
+      },
+    });
+
+    res.json(leaderboard.map((user, index) => ({
+      id: user.id,
+      name: user.name || user.email.split('@')[0],
+      score: user.totalPoints,
+      rank: index + 1,
+      role: user.role,
+      avatar: (user.name || user.email)[0].toUpperCase(),
+    })));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};

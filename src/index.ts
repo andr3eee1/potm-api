@@ -6,6 +6,7 @@ import authRoutes from './routes/auth.routes';
 import homeRoutes from './routes/home.routes';
 import tournamentRoutes from './routes/tournament.routes';
 import adminRoutes from './routes/admin.routes';
+import userRoutes from './routes/user.routes';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -19,6 +20,7 @@ app.use('/auth', authRoutes);
 app.use('/home', homeRoutes);
 app.use('/tournaments', tournamentRoutes);
 app.use('/admin', adminRoutes);
+app.use('/users', userRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.json({ message: 'Welcome to the POTM API' });
