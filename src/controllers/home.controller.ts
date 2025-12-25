@@ -31,6 +31,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       take: 5,
       orderBy: { totalPoints: 'desc' },
       select: {
+        id: true,
         name: true,
         totalPoints: true,
         email: true, // as fallback for name
@@ -53,6 +54,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
           }
         : null,
       leaderboard: leaderboard.map((user, index) => ({
+        id: user.id,
         name: user.name || user.email.split('@')[0],
         score: user.totalPoints,
         rank: index + 1,
