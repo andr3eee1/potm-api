@@ -3,6 +3,32 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import prisma from '../lib/prisma';
+import { AuthRequest } from '../middleware/auth.middleware';
+
+export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user || !req.user.userId) {
+       res.status(401).json({ message: 'Not authenticated' });
+       return;
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    // Always issue a fresh token to ensure roles are up-to-date
+    const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET || 'secret', {
+      expiresIn: '1d',
+    });
+
+    res.json({ token, user: { id: user.id, username: user.username, email: user.email, role: user.role, name: user.name } });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
 
 const registerSchema = z.object({
   username: z.string().min(3),

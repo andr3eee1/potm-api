@@ -11,6 +11,7 @@ async function main() {
     where: { email: 'admin@potm.com' },
     update: {},
     create: {
+      username: 'admin',
       email: 'admin@potm.com',
       name: 'Admin User',
       password,
@@ -23,6 +24,7 @@ async function main() {
     where: { email: 'alex@potm.com' },
     update: {},
     create: {
+      username: 'alex',
       email: 'alex@potm.com',
       name: 'Alex Chen',
       password,
@@ -34,6 +36,7 @@ async function main() {
     where: { email: 'sarah@potm.com' },
     update: {},
     create: {
+      username: 'sarah',
       email: 'sarah@potm.com',
       name: 'Sarah Miller',
       password,
