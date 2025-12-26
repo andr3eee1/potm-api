@@ -5,23 +5,32 @@ import { z } from 'zod';
 import prisma from '../lib/prisma';
 
 const registerSchema = z.object({
+  username: z.string().min(3),
   email: z.string().email(),
   password: z.string().min(6),
   name: z.string().optional(),
 });
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  username: z.string(),
   password: z.string(),
 });
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password, name } = registerSchema.parse(req.body);
+    const { username, email, password, name } = registerSchema.parse(req.body);
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email },
+          { username }
+        ]
+      }
+    });
+
     if (existingUser) {
-      res.status(400).json({ message: 'User already exists' });
+      res.status(400).json({ message: 'User with this email or username already exists' });
       return;
     }
 
@@ -32,6 +41,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     const user = await prisma.user.create({
       data: {
+        username,
         email,
         password: hashedPassword,
         name,
@@ -43,7 +53,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       expiresIn: '1d',
     });
 
-    res.status(201).json({ token, user: { id: user.id, email: user.email, role: user.role, name: user.name } });
+    res.status(201).json({ token, user: { id: user.id, username: user.username, email: user.email, role: user.role, name: user.name } });
   } catch (error) {
     if (error instanceof z.ZodError) {
        res.status(400).json({ message: (error as z.ZodError).issues });
@@ -56,9 +66,9 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password } = loginSchema.parse(req.body);
+    const { username, password } = loginSchema.parse(req.body);
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { username } });
     if (!user) {
       res.status(400).json({ message: 'Invalid credentials' });
       return;
@@ -74,7 +84,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       expiresIn: '1d',
     });
 
-    res.json({ token, user: { id: user.id, email: user.email, role: user.role, name: user.name } });
+    res.json({ token, user: { id: user.id, username: user.username, email: user.email, role: user.role, name: user.name } });
   } catch (error) {
     if (error instanceof z.ZodError) {
        res.status(400).json({ message: (error as z.ZodError).issues });
