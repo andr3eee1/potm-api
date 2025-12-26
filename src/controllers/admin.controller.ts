@@ -3,76 +3,8 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import prisma from '../lib/prisma';
 import { z } from 'zod';
 
-const createTournamentSchema = z.object({
-  title: z.string().min(3),
-  description: z.string().min(10),
-  statement: z.string().optional(),
-  startDate: z.string(),
-  endDate: z.string(),
-  prizePool: z.string().optional(),
-  status: z.enum(['UPCOMING', 'ACTIVE', 'COMPLETED']).optional(),
-});
-
-export const createTournament = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const data = createTournamentSchema.parse(req.body);
-
-    const tournament = await prisma.tournament.create({
-      data: {
-        title: data.title,
-        description: data.description,
-        statement: data.statement,
-        startDate: new Date(data.startDate),
-        endDate: new Date(data.endDate),
-        prizePool: data.prizePool,
-        status: data.status || 'UPCOMING',
-      },
-    });
-
-    res.status(201).json(tournament);
-  } catch (error) {
-     if (error instanceof z.ZodError) {
-       res.status(400).json({ message: error.issues });
-       return;
-    }
-    console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-};
-
-const updateTournamentSchema = createTournamentSchema.partial();
-
-export const updateTournament = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    const tournamentId = parseInt(req.params.id);
-    const data = updateTournamentSchema.parse(req.body);
-
-    const tournament = await prisma.tournament.update({
-      where: { id: tournamentId },
-      data: {
-        ...(data.title && { title: data.title }),
-        ...(data.description && { description: data.description }),
-        ...(data.statement && { statement: data.statement }),
-        ...(data.startDate && { startDate: new Date(data.startDate) }),
-        ...(data.endDate && { endDate: new Date(data.endDate) }),
-        ...(data.prizePool && { prizePool: data.prizePool }),
-        ...(data.status && { status: data.status }),
-      },
-    });
-
-    res.json(tournament);
-  } catch (error) {
-     if (error instanceof z.ZodError) {
-       res.status(400).json({ message: error.issues });
-       return;
-    }
-    console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-};
-
 const updateUserSchema = z.object({
-  role: z.enum(['USER', 'ADMIN']).optional(),
+  role: z.enum(['USER', 'ADMIN', 'EDITOR']).optional(),
   totalPoints: z.number().int().optional(),
 });
 

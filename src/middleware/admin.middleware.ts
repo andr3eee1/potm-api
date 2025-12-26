@@ -8,3 +8,11 @@ export const isAdmin = (req: AuthRequest, res: Response, next: NextFunction): vo
     res.status(403).json({ message: 'Access denied. Admin privileges required.' });
   }
 };
+
+export const isEditor = (req: AuthRequest, res: Response, next: NextFunction): void => {
+  if (req.user && (req.user.role === 'ADMIN' || req.user.role === 'EDITOR')) {
+    next();
+  } else {
+    res.status(403).json({ message: 'Access denied. Editor privileges required.' });
+  }
+};
