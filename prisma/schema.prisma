@@ -27,6 +27,7 @@ model Tournament {
   id             Int             @id @default(autoincrement())
   title          String
   description    String
+  statement      String?
   status         String          @default("UPCOMING") // UPCOMING, ACTIVE, COMPLETED
   startDate      DateTime
   endDate        DateTime
