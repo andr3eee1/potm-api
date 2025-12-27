@@ -6,11 +6,6 @@ import { AuthRequest } from '../middleware/auth.middleware';
 export const getAllTournaments = async (req: Request, res: Response) => {
   try {
     const tournaments = await prisma.tournament.findMany({
-      include: {
-        _count: {
-          select: { tasks: true, participations: true }
-        }
-      },
       orderBy: { startDate: 'desc' }
     });
 
@@ -19,13 +14,12 @@ export const getAllTournaments = async (req: Request, res: Response) => {
       title: t.title,
       description: t.description,
       status: t.status === 'ACTIVE' ? 'Active' : t.status === 'UPCOMING' ? 'Upcoming' : 'Completed',
-      participants: t._count.participations,
-      maxParticipants: 100, // Placeholder or add to schema
       startDate: t.startDate.toLocaleDateString(),
       endDate: t.endDate.toLocaleDateString(),
-      tasksCount: t._count.tasks,
       difficulty: 'Medium', // Placeholder or add to schema
       color: t.status === 'ACTIVE' ? 'bg-blue-500' : 'bg-slate-500',
+      prizePool: t.prizePool,
+      points: t.points,
     })));
   } catch (error) {
     console.error(error);
@@ -37,12 +31,7 @@ export const getTournamentById = async (req: Request, res: Response): Promise<vo
   try {
     const { id } = req.params;
     const tournament = await prisma.tournament.findUnique({
-      where: { id: parseInt(id) },
-      include: {
-        _count: {
-          select: { tasks: true, participations: true }
-        }
-      }
+      where: { id: parseInt(id) }
     });
 
     if (!tournament) {
@@ -56,13 +45,12 @@ export const getTournamentById = async (req: Request, res: Response): Promise<vo
       description: tournament.description,
       statement: tournament.statement,
       status: tournament.status === 'ACTIVE' ? 'Active' : tournament.status === 'UPCOMING' ? 'Upcoming' : 'Completed',
-      participants: tournament._count.participations,
-      maxParticipants: 100,
       startDate: tournament.startDate.toISOString(),
       endDate: tournament.endDate.toISOString(),
-      tasksCount: tournament._count.tasks,
       difficulty: 'Medium',
       color: tournament.status === 'ACTIVE' ? 'bg-blue-500' : 'bg-slate-500',
+      prizePool: tournament.prizePool,
+      points: tournament.points,
     });
   } catch (error) {
     console.error(error);
@@ -78,6 +66,7 @@ const createTournamentSchema = z.object({
   endDate: z.string(),
   prizePool: z.string().optional(),
   status: z.enum(['UPCOMING', 'ACTIVE', 'COMPLETED']).optional(),
+  points: z.number().int().optional(),
 });
 
 export const createTournament = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -93,13 +82,14 @@ export const createTournament = async (req: AuthRequest, res: Response): Promise
         endDate: new Date(data.endDate),
         prizePool: data.prizePool,
         status: data.status || 'UPCOMING',
+        points: data.points || 100,
       },
     });
 
     res.status(201).json(tournament);
   } catch (error) {
      if (error instanceof z.ZodError) {
-       res.status(400).json({ message: error.issues });
+       res.status(400).json({ message: (error as z.ZodError).issues });
        return;
     }
     console.error(error);
@@ -124,13 +114,14 @@ export const updateTournament = async (req: AuthRequest, res: Response): Promise
         ...(data.endDate && { endDate: new Date(data.endDate) }),
         ...(data.prizePool && { prizePool: data.prizePool }),
         ...(data.status && { status: data.status }),
+        ...(data.points && { points: data.points }),
       },
     });
 
     res.json(tournament);
   } catch (error) {
      if (error instanceof z.ZodError) {
-       res.status(400).json({ message: error.issues });
+       res.status(400).json({ message: (error as z.ZodError).issues });
        return;
     }
     console.error(error);

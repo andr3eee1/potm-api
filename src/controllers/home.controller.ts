@@ -19,11 +19,6 @@ export const getDashboardStats = async (req: Request, res: Response) => {
 
     const featuredTournament = await prisma.tournament.findFirst({
       where: { status: 'ACTIVE' },
-      include: {
-        _count: {
-          select: { participations: true, tasks: true },
-        },
-      },
       orderBy: { startDate: 'desc' },
     });
 
@@ -47,10 +42,9 @@ export const getDashboardStats = async (req: Request, res: Response) => {
             title: featuredTournament.title,
             description: featuredTournament.description,
             status: featuredTournament.status,
-            participants: featuredTournament._count.participations,
-            tasks: featuredTournament._count.tasks,
             prizePool: featuredTournament.prizePool,
             endDate: featuredTournament.endDate,
+            points: featuredTournament.points,
           }
         : null,
       leaderboard: leaderboard.map((user, index) => ({

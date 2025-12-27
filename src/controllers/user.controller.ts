@@ -15,7 +15,7 @@ export const getUserProfile = async (req: Request, res: Response): Promise<void>
         role: true,
         totalPoints: true,
         createdAt: true,
-        participations: {
+        submissions: {
           include: {
             tournament: {
               select: {
@@ -25,7 +25,8 @@ export const getUserProfile = async (req: Request, res: Response): Promise<void>
                 startDate: true,
               }
             }
-          }
+          },
+          orderBy: { createdAt: 'desc' }
         }
       }
     });
@@ -53,12 +54,13 @@ export const getUserProfile = async (req: Request, res: Response): Promise<void>
       totalPoints: user.totalPoints,
       joinedAt: user.createdAt,
       rank,
-      participations: user.participations.map(p => ({
-        tournamentId: p.tournament.id,
-        tournamentTitle: p.tournament.title,
-        status: p.tournament.status,
-        joinedAt: p.joinedAt,
-        score: p.score
+      submissions: user.submissions.map(s => ({
+        id: s.id,
+        tournamentId: s.tournament.id,
+        tournamentTitle: s.tournament.title,
+        status: s.status,
+        submittedAt: s.createdAt,
+        score: s.score
       }))
     });
 
