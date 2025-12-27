@@ -18,9 +18,12 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
       return;
     }
 
+    const rememberMe = req.user.rememberMe || false;
+    const expiresIn = rememberMe ? '7d' : '1d';
+
     // Always issue a fresh token to ensure roles are up-to-date
-    const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET || 'secret', {
-      expiresIn: '1d',
+    const token = jwt.sign({ userId: user.id, role: user.role, rememberMe }, process.env.JWT_SECRET || 'secret', {
+      expiresIn,
     });
 
     res.json({ token, user: { id: user.id, username: user.username, email: user.email, role: user.role, name: user.name } });
@@ -40,6 +43,7 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   username: z.string(),
   password: z.string(),
+  rememberMe: z.boolean().optional(),
 });
 
 export const register = async (req: Request, res: Response): Promise<void> => {
@@ -75,7 +79,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       },
     });
 
-    const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET || 'secret', {
+    const token = jwt.sign({ userId: user.id, role: user.role, rememberMe: false }, process.env.JWT_SECRET || 'secret', {
       expiresIn: '1d',
     });
 
@@ -92,7 +96,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { username, password } = loginSchema.parse(req.body);
+    const { username, password, rememberMe } = loginSchema.parse(req.body);
 
     const user = await prisma.user.findUnique({ where: { username } });
     if (!user) {
@@ -106,8 +110,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET || 'secret', {
-      expiresIn: '1d',
+    const expiresIn = rememberMe ? '7d' : '1d';
+
+    const token = jwt.sign({ userId: user.id, role: user.role, rememberMe }, process.env.JWT_SECRET || 'secret', {
+      expiresIn,
     });
 
     res.json({ token, user: { id: user.id, username: user.username, email: user.email, role: user.role, name: user.name } });
