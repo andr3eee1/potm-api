@@ -112,6 +112,19 @@ export const updateTournament = async (req: AuthRequest, res: Response): Promise
   try {
     const tournamentId = parseInt(req.params.id);
     const data = updateTournamentSchema.parse(req.body);
+    const userId = req.user?.userId;
+    const role = req.user?.role;
+
+    const existingTournament = await prisma.tournament.findUnique({ where: { id: tournamentId } });
+    if (!existingTournament) {
+      res.status(404).json({ message: 'Tournament not found' });
+      return;
+    }
+
+    if (role !== 'ADMIN' && existingTournament.creatorId !== userId) {
+      res.status(403).json({ message: 'Access denied. You are not the creator.' });
+      return;
+    }
 
     const tournament = await prisma.tournament.update({
       where: { id: tournamentId },

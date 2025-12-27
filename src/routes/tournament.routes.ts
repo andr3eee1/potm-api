@@ -8,8 +8,8 @@ const router = Router();
 router.get('/', getAllTournaments);
 router.get('/:id', getTournamentById);
 
-router.post('/', authenticateToken, isEditor, createTournament);
-router.put('/:id', authenticateToken, isEditor, updateTournament);
+router.post('/', authenticateToken, createTournament);
+router.put('/:id', authenticateToken, updateTournament);
 
 router.post('/:id/submit', authenticateToken, submitSolution);
 router.get('/:id/submissions', authenticateToken, getSubmissions);
