@@ -16,7 +16,7 @@ export const getAllTournaments = async (req: Request, res: Response) => {
       status: t.status === 'ACTIVE' ? 'Active' : t.status === 'UPCOMING' ? 'Upcoming' : 'Completed',
       startDate: t.startDate.toLocaleDateString(),
       endDate: t.endDate.toLocaleDateString(),
-      difficulty: 'Medium', // Placeholder or add to schema
+      difficulty: t.difficulty,
       color: t.status === 'ACTIVE' ? 'bg-blue-500' : 'bg-slate-500',
       prizePool: t.prizePool,
       points: t.points,
@@ -47,7 +47,7 @@ export const getTournamentById = async (req: Request, res: Response): Promise<vo
       status: tournament.status === 'ACTIVE' ? 'Active' : tournament.status === 'UPCOMING' ? 'Upcoming' : 'Completed',
       startDate: tournament.startDate.toISOString(),
       endDate: tournament.endDate.toISOString(),
-      difficulty: 'Medium',
+      difficulty: tournament.difficulty,
       color: tournament.status === 'ACTIVE' ? 'bg-blue-500' : 'bg-slate-500',
       prizePool: tournament.prizePool,
       points: tournament.points,
@@ -67,6 +67,7 @@ const createTournamentSchema = z.object({
   prizePool: z.string().optional(),
   status: z.enum(['UPCOMING', 'ACTIVE', 'COMPLETED']).optional(),
   points: z.number().int().optional(),
+  difficulty: z.string().optional(),
 });
 
 export const createTournament = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -83,6 +84,7 @@ export const createTournament = async (req: AuthRequest, res: Response): Promise
         prizePool: data.prizePool,
         status: data.status || 'UPCOMING',
         points: data.points || 100,
+        difficulty: data.difficulty || 'N/A',
       },
     });
 
@@ -115,6 +117,7 @@ export const updateTournament = async (req: AuthRequest, res: Response): Promise
         ...(data.prizePool && { prizePool: data.prizePool }),
         ...(data.status && { status: data.status }),
         ...(data.points && { points: data.points }),
+        ...(data.difficulty && { difficulty: data.difficulty }),
       },
     });
 

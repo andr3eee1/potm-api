@@ -32,6 +32,7 @@ model Tournament {
   startDate      DateTime
   endDate        DateTime
   prizePool      String?
+  difficulty     String          @default("N/A")
   points         Int             @default(100)
   submissions    Submission[]
   createdAt      DateTime        @default(now())
