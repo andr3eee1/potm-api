@@ -51,6 +51,7 @@ export const getTournamentById = async (req: Request, res: Response): Promise<vo
       color: tournament.status === 'ACTIVE' ? 'bg-blue-500' : 'bg-slate-500',
       prizePool: tournament.prizePool,
       points: tournament.points,
+      creatorId: tournament.creatorId,
     });
   } catch (error) {
     console.error(error);
@@ -136,4 +137,139 @@ export const updateTournament = async (req: AuthRequest, res: Response): Promise
     console.error(error);
     res.status(500).json({ message: 'Internal server error' });
   }
+};
+
+const submitSolutionSchema = z.object({
+  code: z.string().min(1),
+  language: z.string().optional(),
+});
+
+export const submitSolution = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const tournamentId = parseInt(req.params.id);
+    const userId = req.user.userId;
+    const { code, language } = submitSolutionSchema.parse(req.body);
+
+    const tournament = await prisma.tournament.findUnique({ where: { id: tournamentId } });
+    if (!tournament) {
+      res.status(404).json({ message: 'Tournament not found' });
+      return;
+    }
+    
+    if (tournament.status !== 'ACTIVE') {
+       res.status(400).json({ message: 'Tournament is not active' });
+       return;
+    }
+
+    const submission = await prisma.submission.create({
+      data: {
+        userId,
+        tournamentId,
+        code,
+        language: language || 'cpp',
+        status: 'PENDING',
+      },
+    });
+
+    res.status(201).json(submission);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+       res.status(400).json({ message: (error as z.ZodError).issues });
+       return;
+    }
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const getSubmissions = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const tournamentId = parseInt(req.params.id);
+    const userId = req.user.userId;
+    const role = req.user.role;
+
+    const tournament = await prisma.tournament.findUnique({ where: { id: tournamentId } });
+    if (!tournament) {
+      res.status(404).json({ message: 'Tournament not found' });
+      return;
+    }
+
+    if (role !== 'ADMIN' && tournament.creatorId !== userId) {
+        res.status(403).json({ message: 'Access denied' });
+        return;
+    }
+
+    const submissions = await prisma.submission.findMany({
+      where: { tournamentId },
+      include: {
+        user: {
+          select: { id: true, username: true, email: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json(submissions);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+const gradeSubmissionSchema = z.object({
+  score: z.number().int().min(0),
+  status: z.enum(['ACCEPTED', 'REJECTED']),
+});
+
+export const gradeSubmission = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const submissionId = parseInt(req.params.submissionId);
+        const { score, status } = gradeSubmissionSchema.parse(req.body);
+        
+        const submission = await prisma.submission.findUnique({
+            where: { id: submissionId },
+            include: { tournament: true }
+        });
+
+        if (!submission) {
+            res.status(404).json({ message: 'Submission not found' });
+            return;
+        }
+
+        const userId = req.user.userId;
+        const role = req.user.role;
+
+        if (role !== 'ADMIN' && submission.tournament.creatorId !== userId) {
+            res.status(403).json({ message: 'Access denied' });
+            return;
+        }
+
+        const updated = await prisma.submission.update({
+            where: { id: submissionId },
+            data: {
+                score,
+                status,
+            }
+        });
+        
+        // Recalculate total points for the user
+        const aggregations = await prisma.submission.aggregate({
+            _sum: { score: true },
+            where: { userId: submission.userId }
+        });
+        
+        await prisma.user.update({
+            where: { id: submission.userId },
+            data: { totalPoints: aggregations._sum.score || 0 }
+        });
+
+        res.json(updated);
+    } catch (error) {
+         if (error instanceof z.ZodError) {
+            res.status(400).json({ message: (error as z.ZodError).issues });
+            return;
+         }
+        console.error(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
 };

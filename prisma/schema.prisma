@@ -48,7 +48,9 @@ model Submission {
   user         User       @relation(fields: [userId], references: [id])
   tournamentId Int
   tournament   Tournament @relation(fields: [tournamentId], references: [id])
-  status       String // PENDING, ACCEPTED, REJECTED
+  code         String
+  language     String     @default("cpp")
+  status       String     @default("PENDING") // PENDING, ACCEPTED, REJECTED
   score        Int?
   createdAt    DateTime   @default(now())
 }
