@@ -74,6 +74,11 @@ export const createTournament = async (req: AuthRequest, res: Response): Promise
   try {
     const data = createTournamentSchema.parse(req.body);
 
+    if (!req.user || !req.user.userId) {
+      res.status(401).json({ message: 'Unauthorized' });
+      return;
+    }
+
     const tournament = await prisma.tournament.create({
       data: {
         title: data.title,
@@ -85,6 +90,7 @@ export const createTournament = async (req: AuthRequest, res: Response): Promise
         status: data.status || 'UPCOMING',
         points: data.points || 100,
         difficulty: data.difficulty || 'N/A',
+        creatorId: req.user.userId,
       },
     });
 
